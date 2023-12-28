@@ -1,7 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import { simpleGit, SimpleGit, SimpleGitOptions } from "simple-git";
+import { simpleGit, SimpleGitOptions } from "simple-git";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -19,7 +19,8 @@ export function activate(context: vscode.ExtensionContext) {
     async () => {
       // The code you place here will be executed every time your command is executed
       // Display a message box to the user
-      const baseDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath as string;
+      const baseDir = vscode.workspace.workspaceFolders?.[0]?.uri
+        .fsPath as string;
       const options: Partial<SimpleGitOptions> = {
         baseDir,
         binary: "git",
@@ -27,11 +28,18 @@ export function activate(context: vscode.ExtensionContext) {
         trimmed: false,
       };
       const git = simpleGit(options);
-      git.diff({}, (err, data) => {
-        outputChannel.appendLine(data);
-        outputChannel.show();
+      const diffResult = await git.diff();
+      outputChannel.appendLine(diffResult);
+      outputChannel.show();
+      const commitsHashes: vscode.QuickPickItem[] = (
+        await git.tags()
+      ).all.map((tag) => ({ label: tag }));
+      const pickedHash = await vscode.window.showQuickPick(commitsHashes, {
+        placeHolder: "Select an option",
+        ignoreFocusOut: true,
       });
-      vscode.window.showInformationMessage("Hello World from hedera!");
+      await git.checkout(pickedHash?.label as string, (err, data) => {});
+      vscode.window.showInformationMessage("Hello World from Hedera!");
     }
   );
 
