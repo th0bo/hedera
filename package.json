@@ -14,8 +14,16 @@
   "contributes": {
     "commands": [
       {
-        "command": "hedera.helloWorld",
-        "title": "Hello World"
+        "command": "hedera.test",
+        "title": "Test"
+      },
+      {
+        "command": "hedera.startExercise",
+        "title": "Start Exercise"
+      },
+      {
+        "command": "hedera.showCorrection",
+        "title": "Show Correction"
       }
     ]
   },

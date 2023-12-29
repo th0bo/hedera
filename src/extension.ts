@@ -14,9 +14,9 @@ export function activate(context: vscode.ExtensionContext) {
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
   const outputChannel = vscode.window.createOutputChannel("Hedera");
-  let disposable = vscode.commands.registerCommand(
-    "hedera.helloWorld",
-    async () => {
+  const disposables = [
+    vscode.commands.registerCommand("hedera.test", async () => {}),
+    vscode.commands.registerCommand("hedera.startExercise", async () => {
       // The code you place here will be executed every time your command is executed
       // Display a message box to the user
       const baseDir = vscode.workspace.workspaceFolders?.[0]?.uri
@@ -31,19 +31,31 @@ export function activate(context: vscode.ExtensionContext) {
       const diffResult = await git.diff();
       outputChannel.appendLine(diffResult);
       outputChannel.show();
-      const commitsHashes: vscode.QuickPickItem[] = (
-        await git.tags()
-      ).all.map((tag) => ({ label: tag }));
-      const pickedHash = await vscode.window.showQuickPick(commitsHashes, {
-        placeHolder: "Select an option",
+      const exercises: vscode.QuickPickItem[] = (await git.tags()).all.map(
+        (tag) => ({ label: tag })
+      );
+      const pickedExercise = await vscode.window.showQuickPick(exercises, {
+        placeHolder: "Select an exercise",
         ignoreFocusOut: true,
       });
-      await git.checkout(pickedHash?.label as string, (err, data) => {});
-      vscode.window.showInformationMessage("Hello World from Hedera!");
-    }
-  );
+      const statusResult = await git.status();
+      if (!statusResult.isClean()) {
+        if (statusResult.detached) {
+          const currentExercise = (await git.log()).all
+            .map(({ refs }) => /tag: (\w+)/.exec(refs))
+            .filter((execArray) => execArray !== undefined)[0]?.[1];
+          await git.checkoutLocalBranch(`hedera-${currentExercise}`);
+        }
+        await git.add(statusResult.modified);
+        await git.commit("Hedera");
+      }
+      await git.checkout(pickedExercise?.label as string, (err, data) => {});
+      vscode.window.showInformationMessage(`Starting exercise ${pickedExercise}.`);
+    }),
+    vscode.commands.registerCommand("hedera.showCorrection", () => {}),
+  ];
 
-  context.subscriptions.push(disposable);
+  context.subscriptions.push(...disposables);
 }
 
 // This method is called when your extension is deactivated
