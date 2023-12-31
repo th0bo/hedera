@@ -22,8 +22,12 @@
         "title": "Start Exercise"
       },
       {
-        "command": "hedera.showCorrection",
-        "title": "Show Correction"
+        "command": "hedera.showFullCorrection",
+        "title": "Show Full Correction"
+      },
+      {
+        "command": "hedera.showCorrectionForFile",
+        "title": "Show Correction For File"
       }
     ]
   },

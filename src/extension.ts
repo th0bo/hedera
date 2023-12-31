@@ -50,7 +50,7 @@ export function activate(context: vscode.ExtensionContext) {
         `Starting exercise ${pickedExercise}.`
       );
     }),
-    vscode.commands.registerCommand("hedera.showCorrection", async () => {
+    vscode.commands.registerCommand("hedera.showFullCorrection", async () => {
       const diffResult = await git.diff(["test0..test1"]);
       const diffDocument = await vscode.workspace.openTextDocument({
         content: diffResult,
@@ -58,6 +58,22 @@ export function activate(context: vscode.ExtensionContext) {
       });
       vscode.window.showTextDocument(diffDocument);
     }),
+    vscode.commands.registerCommand(
+      "hedera.showCorrectionForFile",
+      async () => {
+        const diffResult = await git.diff([
+          "test0..test1",
+          "--",
+          "style/content/inbox.css",
+        ]);
+
+        const diffDocument = await vscode.workspace.openTextDocument({
+          content: diffResult,
+          language: "diff",
+        });
+        vscode.window.showTextDocument(diffDocument);
+      }
+    ),
   ];
 
   context.subscriptions.push(...disposables);
