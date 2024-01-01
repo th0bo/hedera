@@ -1,7 +1,13 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import { simpleGit, SimpleGitOptions } from "simple-git";
+
+import { selectBaseDir } from './baseDir';
+import { initGit } from './git';
+import { register as registerTest } from './commands/test';
+import { register as registerStartExercise } from './commands/startExercise';
+import { register as registerShowFullCorrection } from './commands/showFullCorrection';
+import { register as registerShowCorrectionForFile } from './commands/showCorrectionForFile';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -14,78 +20,16 @@ export async function activate(context: vscode.ExtensionContext) {
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
   const outputChannel = vscode.window.createOutputChannel("Hedera");
-  
-  const workspaceFolders = vscode.workspace.workspaceFolders;
-  if (workspaceFolders === undefined || workspaceFolders.length === 0) {
-    throw new Error("No workspace folder.");
-  }
-  const baseDir = (
-    workspaceFolders.length > 1
-      ? ((await vscode.window.showWorkspaceFolderPick()) as vscode.WorkspaceFolder)
-      : workspaceFolders[0]
-  ).uri.fsPath;
 
-  const options: Partial<SimpleGitOptions> = {
-    baseDir,
-    binary: "git",
-    maxConcurrentProcesses: 6,
-    trimmed: false,
-  };
-  const git = simpleGit(options);
+  const baseDir = await selectBaseDir();
+  const git = initGit(baseDir);
+
   const disposables = [
-    vscode.commands.registerCommand("hedera.test", async () => {}),
-    vscode.commands.registerCommand("hedera.startExercise", async () => {
-      // The code you place here will be executed every time your command is executed
-      // Display a message box to the user
-      const exercises: vscode.QuickPickItem[] = (await git.tags()).all.map(
-        (tag) => ({ label: tag })
-      );
-      const pickedExercise = await vscode.window.showQuickPick(exercises, {
-        placeHolder: "Select an exercise",
-        ignoreFocusOut: true,
-      });
-      const statusResult = await git.status();
-      if (!statusResult.isClean()) {
-        if (statusResult.detached) {
-          const currentExercise = (await git.log()).all
-            .map(({ refs }) => /tag: (\w+)/.exec(refs))
-            .filter((execArray) => execArray !== undefined)[0]?.[1];
-          await git.checkoutLocalBranch(`hedera-${currentExercise}`);
-        }
-        await git.add(statusResult.modified);
-        await git.commit("Hedera");
-      }
-      await git.checkout(pickedExercise?.label as string, (err, data) => {});
-      vscode.window.showInformationMessage(
-        `Starting exercise ${pickedExercise}.`
-      );
-    }),
-    vscode.commands.registerCommand("hedera.showFullCorrection", async () => {
-      const diffResult = await git.diff(["test0..test1"]);
-      const diffDocument = await vscode.workspace.openTextDocument({
-        content: diffResult,
-        language: "diff",
-      });
-      vscode.window.showTextDocument(diffDocument);
-    }),
-    vscode.commands.registerCommand(
-      "hedera.showCorrectionForFile",
-      async () => {
-        const diffResult = await git.diff([
-          "test0..test1",
-          "--",
-          "style/content/inbox.css",
-        ]);
-
-        const diffDocument = await vscode.workspace.openTextDocument({
-          content: diffResult,
-          language: "diff",
-        });
-        vscode.window.showTextDocument(diffDocument);
-      }
-    ),
+    registerTest(),
+    registerStartExercise(git),
+    registerShowFullCorrection(git),
+    registerShowCorrectionForFile(git),
   ];
-
   context.subscriptions.push(...disposables);
 }
 
