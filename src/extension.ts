@@ -27,8 +27,8 @@ export async function activate(context: vscode.ExtensionContext) {
   const disposables = [
     registerTest(),
     registerStartExercise(git),
-    registerShowFullCorrection(git),
-    registerShowCorrectionForFile(git),
+    registerShowFullCorrection(baseDir),
+    registerShowCorrectionForFile(baseDir),
   ];
   context.subscriptions.push(...disposables);
 }
