@@ -1,9 +1,10 @@
-import * as vscode from "vscode";
-import { diff } from "../gitb";
+import type { Git } from "../git";
 
-export const register = (baseDir: string) =>
+import * as vscode from "vscode";
+
+export const register = (git: Git) =>
   vscode.commands.registerCommand("hedera.showCorrectionForFile", async () => {
-    const diffResult = diff(baseDir, "test0", "test1", "style/content/inbox.css");
+    const diffResult = git.diff("test0", "test1", "style/content/inbox.css");
 
     const diffDocument = await vscode.workspace.openTextDocument({
       content: diffResult,

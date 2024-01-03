@@ -3,7 +3,7 @@
 import * as vscode from "vscode";
 
 import { selectBaseDir } from './baseDir';
-import { initGit } from './git';
+import { Git } from './git';
 import { register as registerTest } from './commands/test';
 import { register as registerStartExercise } from './commands/startExercise';
 import { register as registerShowFullCorrection } from './commands/showFullCorrection';
@@ -22,13 +22,13 @@ export async function activate(context: vscode.ExtensionContext) {
   const outputChannel = vscode.window.createOutputChannel("Hedera");
 
   const baseDir = await selectBaseDir();
-  const git = initGit(baseDir);
+  const git = new Git(baseDir);
 
   const disposables = [
     registerTest(),
     registerStartExercise(git),
-    registerShowFullCorrection(baseDir),
-    registerShowCorrectionForFile(baseDir),
+    registerShowFullCorrection(git),
+    registerShowCorrectionForFile(git),
   ];
   context.subscriptions.push(...disposables);
 }

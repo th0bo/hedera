@@ -1,31 +1,29 @@
-import type { SimpleGit } from "simple-git";
+import type { Git } from "../git";
 
 import * as vscode from "vscode";
 
-export const register = (git: SimpleGit) =>
+export const register = (git: Git) =>
   vscode.commands.registerCommand("hedera.startExercise", async () => {
     // The code you place here will be executed every time your command is executed
     // Display a message box to the user
-    const exercises: vscode.QuickPickItem[] = (await git.tags()).all.map(
-      (tag) => ({ label: tag })
-    );
+    const exercises: vscode.QuickPickItem[] = git
+      .tag()
+      .map((tag) => ({ label: tag }));
     const pickedExercise = await vscode.window.showQuickPick(exercises, {
       placeHolder: "Select an exercise",
       ignoreFocusOut: true,
     });
-    const statusResult = await git.status();
-    if (!statusResult.isClean()) {
-      if (statusResult.detached) {
-        const currentExercise = (await git.log()).all
-          .map(({ refs }) => /tag: (\w+)/.exec(refs))
-          .filter((execArray) => execArray !== undefined)[0]?.[1];
-        await git.checkoutLocalBranch(`hedera-${currentExercise}`);
+    const statusResult = git.status();
+    if (!statusResult.clean) {
+      if (statusResult.detachedHead !== undefined) {
+        const currentExercise = statusResult.detachedHead;
+        git.switch(`hedera-${currentExercise}`, true);
       }
-      await git.add(statusResult.modified);
-      await git.commit("Hedera");
+      git.add();
+      git.commit("Hedera");
     }
-    await git.checkout(pickedExercise?.label as string, (err, data) => {});
+    git.checkout(pickedExercise?.label as string);
     vscode.window.showInformationMessage(
-      `Starting exercise ${pickedExercise}.`
+      `Starting exercise ${pickedExercise?.label as string}.`
     );
   });
